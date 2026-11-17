@@ -79,10 +79,11 @@ stage() {
 need_file() { [ -s "$1" ] || fail "gate: $1 is missing or empty"; }
 
 # need_findings <file>: present (may be empty), one valid finding object per line.
+# Each line must have the six keys with valid values. merge_findings drops any other key.
 need_findings() {
   [ -f "$1" ] || fail "gate: $1 is missing"
   jq -e -s 'all(.[];
-      (keys == ["claim","evidence","file","line","severity","title"])
+      (has("title") and has("severity") and has("file") and has("line") and has("claim") and has("evidence"))
       and (.severity | IN("critical","high","medium","low","info"))
       and (.line | type == "number"))' "$1" >/dev/null \
     || fail "gate: $1 has a line that is not a valid finding"
@@ -105,7 +106,8 @@ merge_findings() {
   : > "$new"
   for d in "$@"; do
     [ -f "$d/findings.jsonl" ] || continue
-    jq -c --arg stage "$(basename "$d")" '. + {stage: $stage}' "$d/findings.jsonl" >> "$new"
+    jq -c --arg stage "$(basename "$d")" \
+      '{title, severity, file, line, claim, evidence, stage: $stage}' "$d/findings.jsonl" >> "$new"
   done
   jq -c --argjson n "$n" -s 'to_entries[] | .value + {id: ("F" + ((.key + $n + 1) | tostring))}' "$new" > "$new.ids"
   mv "$new.ids" "$new"

@@ -129,7 +129,7 @@ Run `omp models anthropic` to see the model IDs that your omp can use.
 | Gate | Check |
 |---|---|
 | Every stage | `omp` exits 0, and the agent's last line is `DONE` |
-| `findings.jsonl` | Each line is a JSON object with exactly `title`, `severity`, `file`, `line`, `claim`, `evidence` |
+| `findings.jsonl` | Each line is a JSON object with `title`, `severity`, `file`, `line`, `claim`, `evidence` (the merge drops other keys) |
 | `DOSSIER.md` | Has `## Unenforced assumptions` and `## Open questions` |
 | `verdicts.jsonl` | Exactly one valid verdict for each finding in the round |
 | `REPORT.md` | Not empty |
