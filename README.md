@@ -41,6 +41,36 @@ Requirements: `omp`, `uv`, `jq`, `envsubst` (gettext), `git`. For Solidity targe
 The run directory is `.scratch/runs/<repo>-<UTC time>/`. Set `AUDIT_RUNS` to change the parent.
 The final report is `report/REPORT.md` in the run directory.
 
+## Run a whole repository in priority order
+
+```sh
+./audit-all.sh <repo> <triage-file> [max-components]
+```
+
+`audit.sh` audits one scope. `audit-all.sh` audits every component of a repository, highest
+rank first, one at a time. You write the triage file: it decides what matters most.
+
+```text
+# kind | path | spec ("-" for none) | reason
+component | contracts/src    | docs/spec.md | Holds user funds. Immutable after deploy.
+component | services/api     | docs/spec.md | Internet-facing. Holds a funded key.
+component | scripts          | -            | Operator tools. Not internet-facing.
+exclude   | test             | -            | Tests. The stages read them as evidence.
+exclude   | vendor/other-lib | -            | Separate project.
+```
+
+- Components are in rank order. Rank them by value at risk and exposure, not by size.
+- Before any model runs, a gate checks that every tracked source file belongs to exactly one
+  entry. The longest matching path wins, so a component can sit inside an excluded directory.
+- `max-components` stops after that many components. The rest show as `not run`.
+- A completed run with the same commit, scope, and spec is reused. After a failure (for
+  example a rate limit), run the same command again: it continues with the failed component.
+- `COVERAGE.md` in `.scratch/runs/<repo>-all-<UTC time>/` opens with the coverage line, for
+  example "Audited 3 of 10 components: 1050 of 9600 source lines". It is rewritten after each
+  component, so it is correct even when the run stops early.
+
+Keep the triage file of a private repository outside this repository.
+
 ## Stages
 
 ```mermaid
